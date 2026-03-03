@@ -1,0 +1,25 @@
+# 1. 가상환경 (가장 중요)
+venv/
+.venv/
+env/
+bin/
+lib/
+share/
+myenv/
+.myenv/
+
+# 2. 파이썬 실행 결과물 및 캐시
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 3. 환경 변수 및 설정 (비밀번호, API 키 등)
+.env
+config.py
+
+# 4. 운영체제 관련 파일
+.DS_Store
+Thumbs.db
