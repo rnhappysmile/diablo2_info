@@ -17,6 +17,9 @@ load_dotenv(dotenv_path=env_path)
 # 환경 변수에서 URL을 가져옵니다.
 # 로컬 .env에 값이 있으면 그 값을, 없으면 GitHub Secrets 값을 가져오게 됩니다.
 webhook_raw = os.getenv("DISCORD_WEBHOOKS", "")
+D2TZ_TOKEN = os.getenv("D2TZ_TOKEN", "")
+TERROR_ZONE_API_URL = os.getenv("TERROR_ZONE_API_URL", "https://api.d2tz.info/public/tz?token=")
+DIABLO_CLONE_API_URL = os.getenv("DIABLO_CLONE_API_URL", "https://api.d2tz.info/public/dc?token=")
 WEBHOOK_URLS = [url.strip() for url in webhook_raw.split(",") if url.strip()]
 
 # 유효한 URL만 필터링
@@ -82,7 +85,7 @@ def diablo_clone_status(data):
 
     return "\n".join(msg_lines)
 
-def terror_zone_status(terror_zone_data):
+def analyze_tz(terror_zone_data):
     if not terror_zone_data or len(terror_zone_data) < 2:
         return "테러존 정보가 부족합니다."
 
@@ -125,31 +128,69 @@ def terror_zone_status(terror_zone_data):
 
     assert "대박" in result
 
-def send_webhook():
+def fetch_d2tz_data(api_url):
+    """API로부터 데이터를 요청하여 JSON으로 반환"""
+    try:
+        response = requests.get(api_url)
+        response.raise_for_status() # 200 OK가 아니면 에러 발생
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"API 요청 실패 ({api_url}): {e}")
+        return None
+    
+def get_terror_zone_info():
+    """테러 존 정보를 가져와서 포맷팅"""
+    data = fetch_d2tz_data(f"{TERROR_ZONE_API_URL}{D2TZ_TOKEN}")
+    if not data:
+        return "테러 존 정보를 가져올 수 없습니다."
+    
+    # 이전에 작성한 analyze_tz 함수를 호출하여 문자열 생성
+    return analyze_tz(data)
+
+def get_diablo_clone_info():
+    """디아블로 복제(우버디아) 상태 정보를 가져와서 포맷팅"""
+    data = fetch_d2tz_data(f"{DIABLO_CLONE_API_URL}{D2TZ_TOKEN}")
+    if not data:
+        return "디아블로 복제 정보를 가져올 수 없습니다."
+
+    # 예시: 데이터 구조에 따른 간단한 포맷팅 (실제 응답 구조에 맞춰 조정 필요)
+    results = diablo_clone_status(data)
+    
+    return results
+
+def send_webhook(message):
     if not WEBHOOK_URLS:
         print("설정된 웹훅 URL이 없습니다.")
         return
-
-    IMAGE_URL = "https://api.d2tz.info/public/tz_image?l=ko"
+    
+    payload = {'content': f"{message}\n\nData courtesy of [d2tz.info](<https://www.d2tz.info/>)"}
     
     try:
-        response = requests.get(IMAGE_URL)
-        response.raise_for_status()
-        image_data = response.content
-
-        for url in WEBHOOK_URLS:
-            image_file = BytesIO(image_data)
-            files = {'file': ('tz_image.png', image_file, 'image/png')}
-            payload = {'content': "Data courtesy of [d2tz.info](<https://www.d2tz.info/>)"}
-            
-            res = requests.post(url, data=payload, files=files)
+        for url in WEBHOOK_URLS:            
+            res = requests.post(url, data=payload)
             print(f"전송 결과({url}): {res.status_code}")
 
     except Exception as e:
         print(f"에러 발생: {e}")
 
+def diablo_info():
+    """우버디아 상태와 테러존 정보를 가져와서 출력"""
+    tz_info = get_terror_zone_info()
+    d2tz_info = get_diablo_clone_info()
+    
+    #print("tz_info:", tz_info)
+    #print("d2tz_info:", d2tz_info)
+
+    message = f"{tz_info}\n\n{d2tz_info}"  
+    #print(message)
+    
+    return message
+
 def run():
-    send_webhook()
+    #d2tz에서 데이터 받아오기
+    print("실행 시작")
+    message = diablo_info()
+    send_webhook(message)
 
 if __name__ == "__main__":
     run()

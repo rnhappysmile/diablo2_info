@@ -1,11 +1,10 @@
 # tests/test_d2r.py
+from unittest.mock import patch, MagicMock
 from src.main import diablo_clone_status
-from src.main import terror_zone_status
+from src.main import analyze_tz
+from src.main import get_terror_zone_info, get_diablo_clone_info
 
-def test_state_plus_one_logic():
-    """state 값이 0이 아닐 때 +1 되어서 출력되는지 확인"""
-    
-    test_data = [{"region": "asia", "ladder": True, "hardcore": True, "dlc": "LoD", "state": 1}, 
+DIABLO_CLONE_DATA = [{"region": "asia", "ladder": True, "hardcore": True, "dlc": "LoD", "state": 1}, 
                  {"region": "asia", "ladder": True, "hardcore": False, "dlc": "LoD", "state": 3}, 
                  {"region": "asia", "ladder": False, "hardcore": True, "dlc": "LoD", "state": 1}, 
                  {"region": "asia", "ladder": False, "hardcore": False, "dlc": "LoD", "state": 3}, 
@@ -38,7 +37,34 @@ def test_state_plus_one_logic():
                  {"region": "cn", "ladder": False, "hardcore": True, "dlc": "RotW", "state": 0}, 
                  {"region": "cn", "ladder": False, "hardcore": False, "dlc": "RotW", "state": 0}]
 
-    result = diablo_clone_status(test_data)
+TZ_DATA = [
+        {
+            "time": 1772602200, 
+            "zone_name": ["Outer_Steppes", "Plains_of_Despair"], 
+            "immunities": ["f", "c", "l", "p", "ph", "m"],
+            "tier-exp": "C", 
+            "tier-loot": "C", 
+            "area_id": 104, 
+            "area_ids": [104, 105], 
+            "end_time": 1772604000
+        },
+        {
+            "time": 1772600400, 
+            "zone_name": ["Tal_Rashas_Tomb", "Duriels_Lair", "Canyon_of_The_Magi"], 
+            "immunities": ["f", "c", "l", "p", "ph", "m"], 
+            "tier-exp": "S", 
+            "tier-loot": "A", 
+            "area_id": 46, 
+            "area_ids": [46, 66, 67, 68, 69, 70, 71, 72, 73], 
+            "end_time": 1772602200
+        }
+    ]
+
+def test_state_plus_one_logic():
+    """state 값이 0이 아닐 때 +1 되어서 출력되는지 확인"""
+
+
+    result = diablo_clone_status(DIABLO_CLONE_DATA)
     print(result)  # 결과 출력하여 확인
 
 # 1. 줄바꿈으로 쪼개고, 앞뒤 공백 제거 및 빈 줄 제외
@@ -67,32 +93,9 @@ def test_state_boundary_logic():
     
     assert "(상태: 6)" in result
 
-def test_terror_zone_status():
-    # 복사해오신 데이터를 raw_json이나 리스트로 넣습니다.
-    tz_data = [
-        {
-            "time": 1772602200, 
-            "zone_name": ["Outer_Steppes", "Plains_of_Despair"], 
-            "immunities": ["f", "c", "l", "p", "ph", "m"],
-            "tier-exp": "C", 
-            "tier-loot": "C", 
-            "area_id": 104, 
-            "area_ids": [104, 105], 
-            "end_time": 1772604000
-        },
-        {
-            "time": 1772600400, 
-            "zone_name": ["Tal_Rashas_Tomb", "Duriels_Lair", "Canyon_of_The_Magi"], 
-            "immunities": ["f", "c", "l", "p", "ph", "m"], 
-            "tier-exp": "S", 
-            "tier-loot": "A", 
-            "area_id": 46, 
-            "area_ids": [46, 66, 67, 68, 69, 70, 71, 72, 73], 
-            "end_time": 1772602200
-        }
-    ]
-    
-    result = terror_zone_status(tz_data)
+def test_analyze_tz():
+    # 복사해오신 데이터를 raw_json이나 리스트로 넣습니다.   
+    result = analyze_tz(TZ_DATA)
     
     print(f"\n{result}")  # 결과 출력하여 확인
 
@@ -108,3 +111,55 @@ def test_terror_zone_status():
     
     # 유지 시간이 연속되는지 확인 (예: 14:30가 양쪽에 있는지)
     assert result.count("14:30") >= 2
+
+# 1. 테러 존 API 테스트
+@patch('src.main.requests.get')
+def test_get_terror_zone_info_success(mock_get):
+    # 가짜 응답 데이터 설정
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = TZ_DATA
+    mock_get.return_value = mock_response
+
+    result = get_terror_zone_info()
+
+    # 현재와 다음이라는 제목이 모두 있는지 확인
+    assert "Outer_Steppes" in result
+    assert "Tal_Rashas_Tomb" in result
+
+    # 현재 테러존의 등급이 C로 표시되는지 확인
+    assert "C" in result
+    
+    # 다음 테러존 지역이 포함되었는지 확인
+    assert "1772600400" in result
+    
+    # 유지 시간이 연속되는지 확인 (예: 14:30가 양쪽에 있는지)
+    assert result.count("14:30") >= 2
+
+# 2. 우버디아(Diablo Clone) API 테스트
+@patch('src.main.requests.get')
+def test_get_diablo_clone_info_success(mock_get):
+    # 가짜 응답 데이터 설정
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = DIABLO_CLONE_DATA
+    mock_get.return_value = mock_response
+
+    result = get_diablo_clone_info()
+
+    # 검증: 각 지역별 진행도가 잘 표시되는지
+    assert "asia" in result
+    assert "RotW" in result
+    assert "0" in result
+
+# 3. API 요청 실패 시 테스트
+@patch('src.main.requests.get')
+def test_api_fetch_failure(mock_get):
+    # 404 에러 시뮬레이션
+    mock_get.side_effect = Exception("Connection Error")
+
+    result_tz = get_terror_zone_info()
+    result_dc = get_diablo_clone_info()
+
+    assert "가져올 수 없습니다" in result_tz
+    assert "가져올 수 없습니다" in result_dc
