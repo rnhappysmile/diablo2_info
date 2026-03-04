@@ -63,10 +63,10 @@ AREA_MAP = load_area_mapping()
 def diablo_clone_status(data):
     issues = [item for item in data]
     
-    msg_lines = ["우버디아 서버 상태 알림"]
+    msg_lines = ["[우버디아 서버 상태 알림]"]
     
     for item in issues:
-        if item['state'] == 0:
+        if item['state'] == 0 or item['region'] == "cn":
             continue
 
         region = item['region'].upper()
@@ -81,7 +81,7 @@ def diablo_clone_status(data):
         dlc = "확장팩" if item['dlc'] == "LoD" else "악마술사의 군림"
         
         #msg_lines.append(f"{emoji} [{region}] {dlc} {ladder} {mode} (상태: {display_state})")
-        msg_lines.append(f"[{region}] {dlc} {ladder} {mode} (상태: {display_state})")
+        msg_lines.append(f"[{region}] {dlc} {ladder} {mode} (상태: {display_state}/6)")
 
     return "\n".join(msg_lines)
 

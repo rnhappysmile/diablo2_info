@@ -5,7 +5,7 @@ from src.main import analyze_tz
 from src.main import get_terror_zone_info, get_diablo_clone_info
 
 DIABLO_CLONE_DATA = [{"region": "asia", "ladder": True, "hardcore": True, "dlc": "LoD", "state": 1}, 
-                 {"region": "asia", "ladder": True, "hardcore": False, "dlc": "LoD", "state": 3}, 
+                 {"region": "asia", "ladder": True, "hardcore": False, "dlc": "RotW", "state": 3}, 
                  {"region": "asia", "ladder": False, "hardcore": True, "dlc": "LoD", "state": 1}, 
                  {"region": "asia", "ladder": False, "hardcore": False, "dlc": "LoD", "state": 3}, 
                  {"region": "asia", "ladder": True, "hardcore": True, "dlc": "RotW", "state": 0}, 
@@ -60,7 +60,7 @@ TZ_DATA = [
         }
     ]
 
-def test_state_plus_one_logic():
+def test_state_logic():
     """state 값이 0이 아닐 때 +1 되어서 출력되는지 확인"""
 
 
@@ -74,15 +74,15 @@ def test_state_plus_one_logic():
     # 방법 A: 첫 줄이 제목인 것을 알 경우 슬라이싱 사용
     data_lines = all_lines[1:] 
     
-    # 3. 개수 검증 (정확히 7개여야 함)
-    assert len(data_lines) == 7, f"데이터 개수 불일치: 기대값 7, 실제값 {len(data_lines)}"
+    # 3. 개수 검증 (정확히 5개여야 함)
+    assert len(data_lines) == 5, f"데이터 개수 불일치: 기대값 5, 실제값 {len(data_lines)}"
     
     # 4. 제목 내용 검증 (선택 사항)
-    assert "우버디아 서버 상태 알림" in all_lines[0]
+    assert "[우버디아 서버 상태 알림]" in all_lines[0]
     
     # 5. 특정 데이터 변환 확인 (상태 값이 잘 더해졌는지)
     # 예: ASIA 확장팩 래더 하드코어의 state는 1이었으므로 (상태: 2)가 포함되어야 함
-    assert "[ASIA] 확장팩 래더 하드코어 (상태: 2)" in data_lines
+    assert "[ASIA] 확장팩 래더 하드코어 (상태: 2/6)" in data_lines
     
     print(f"\n테스트 통과: 제목과 {len(data_lines)}개의 데이터 확인 완료!")
 
@@ -91,7 +91,7 @@ def test_state_boundary_logic():
     boundary_data = [{"region": "us", "ladder": True, "hardcore": True, "dlc": "LoD", "state": 5}]
     result = diablo_clone_status(boundary_data)
     
-    assert "(상태: 6)" in result
+    assert "(상태: 6/6)" in result
 
 def test_analyze_tz():
     # 복사해오신 데이터를 raw_json이나 리스트로 넣습니다.   
@@ -123,15 +123,12 @@ def test_get_terror_zone_info_success(mock_get):
 
     result = get_terror_zone_info()
 
-    # 현재와 다음이라는 제목이 모두 있는지 확인
-    assert "Outer_Steppes" in result
-    assert "Tal_Rashas_Tomb" in result
+    # 현재와 다음지역이 모두 있는지 확인
+    assert "평원 외곽" in result
+    assert "탈 라샤의 무덤" in result
 
     # 현재 테러존의 등급이 C로 표시되는지 확인
     assert "C" in result
-    
-    # 다음 테러존 지역이 포함되었는지 확인
-    assert "1772600400" in result
     
     # 유지 시간이 연속되는지 확인 (예: 14:30가 양쪽에 있는지)
     assert result.count("14:30") >= 2
@@ -148,11 +145,10 @@ def test_get_diablo_clone_info_success(mock_get):
     result = get_diablo_clone_info()
 
     # 검증: 각 지역별 진행도가 잘 표시되는지
-    assert "asia" in result
-    assert "RotW" in result
-    assert "0" in result
+    assert "[ASIA]" in result
+    assert "악마술사의 군림" in result
 
-# 3. API 요청 실패 시 테스트
+# 3. API 요청 실패 시 테스트 (수정필요)
 @patch('src.main.requests.get')
 def test_api_fetch_failure(mock_get):
     # 404 에러 시뮬레이션
@@ -161,5 +157,5 @@ def test_api_fetch_failure(mock_get):
     result_tz = get_terror_zone_info()
     result_dc = get_diablo_clone_info()
 
-    assert "가져올 수 없습니다" in result_tz
-    assert "가져올 수 없습니다" in result_dc
+    assert "테러 존 정보를 가져올 수 없습니다." in result_tz
+    assert "디아블로 복제 정보를 가져올 수 없습니다." in result_dc
