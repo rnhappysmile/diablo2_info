@@ -1,8 +1,8 @@
 # tests/test_d2r.py
 from unittest.mock import patch, MagicMock
-from src.py.main import diablo_clone_status
-from src.py.main import analyze_tz
-from src.py.main import get_terror_zone_info, get_diablo_clone_info
+from py.main import diablo_clone_status
+from py.main import analyze_tz
+from py.main import get_terror_zone_info, get_diablo_clone_info
 
 DIABLO_CLONE_DATA = [{"region": "asia", "ladder": True, "hardcore": True, "dlc": "LoD", "state": 1}, 
                  {"region": "asia", "ladder": True, "hardcore": False, "dlc": "RotW", "state": 3}, 

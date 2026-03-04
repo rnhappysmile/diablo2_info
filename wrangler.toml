@@ -1,0 +1,8 @@
+name = "diablo2-info-worker"
+main = "src/main.py"
+compatibility_date = "2026-03-04"
+
+compatibility_flags = [ "python_workers" ]
+
+[triggers]
+crons = ["1,31 * * * *"]

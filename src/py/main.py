@@ -137,6 +137,13 @@ def fetch_d2tz_data(api_url):
     except requests.exceptions.RequestException as e:
         print(f"API 요청 실패 ({api_url}): {e}")
         return None
+    except requests.exceptions.ConnectionError:
+        return "❌ 서버 연결 오류: d2tz 서버에 접속할 수 없습니다."
+    except requests.exceptions.Timeout:
+        return "⏱️ 요청 시간 초과: 응답이 너무 늦습니다."
+    except Exception as e:
+        # 그 외 예상치 못한 모든 에러 처리
+        return f"🚨 알 수 없는 오류 발생: {str(e)}"
     
 def get_terror_zone_info():
     """테러 존 정보를 가져와서 포맷팅"""
@@ -185,6 +192,23 @@ def diablo_info():
     #print(message)
     
     return message
+
+async def scheduled(event, env, ctx):
+    """
+    이 함수가 wrangler.toml에 설정한 1분, 31분마다 자동으로 실행됩니다.
+    """
+    print("Cloudflare Worker 스케줄러 실행 시작")
+    
+    try:
+        run()
+        
+        print("정상적으로 처리되었습니다.")
+    except Exception as e:
+        print(f"에러 발생: {e}")
+
+# (선택사항) 웹 주소로 직접 접속했을 때도 실행되게 하고 싶다면 추가
+async def on_fetch(request, env, ctx):
+    return "Worker is alive! Next run at 01 or 31 min."
 
 def run():
     #d2tz에서 데이터 받아오기

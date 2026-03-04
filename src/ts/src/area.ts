@@ -1,4 +1,4 @@
-{
+export const areaDataRaw = [{
     "Rogue_Encampment": {
         "en-us": "Rogue Encampment",
         "zh-cn": "流亡者营地",
@@ -2239,5 +2239,4 @@
         "pt-br": "Câmara da Pedra do Mundo",
         "ru": "Святилище Мироздания"
     }
-}
-
+}];
