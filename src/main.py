@@ -20,6 +20,32 @@ WEBHOOK_URLS = [url.strip() for url in webhook_raw.split(",") if url.strip()]
 # 유효한 URL만 필터링
 WEBHOOK_URLS = [url for url in WEBHOOK_URLS if url]
 
+# 30분 마다 우버디아 체크하는게 의미가 있을까? 혹시 모름을 위해 1이 아닌 경우만 안내할까 
+def diablo_clone_status(data):
+    issues = [item for item in data]
+    
+    msg_lines = ["우버디아 서버 상태 알림"]
+    
+    for item in issues:
+        if item['state'] == 0:
+            continue
+
+        region = item['region'].upper()
+        # +1 로직 적용 (0~5 -> 1~6)
+        display_state = item['state'] + 1
+        
+        # 가독성을 위한 이모지 분기 (필요에 따라 수정)
+        #emoji = "⚠️" if display_state <= 3 else "🚫"
+        
+        mode = "하드코어" if item['hardcore'] else "스탠다드"
+        ladder = "래더" if item['ladder'] else "비래더"
+        dlc = "확장팩" if item['dlc'] == "LoD" else "오리지널"
+        
+        #msg_lines.append(f"{emoji} [{region}] {dlc} {ladder} {mode} (상태: {display_state})")
+        msg_lines.append(f"[{region}] {dlc} {ladder} {mode} (상태: {display_state})")
+
+    return "\n".join(msg_lines)
+
 def send_webhook():
     if not WEBHOOK_URLS:
         print("설정된 웹훅 URL이 없습니다.")
@@ -43,5 +69,8 @@ def send_webhook():
     except Exception as e:
         print(f"에러 발생: {e}")
 
-if __name__ == "__main__":
+def run():
     send_webhook()
+
+if __name__ == "__main__":
+    run()
