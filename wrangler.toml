@@ -1,8 +1,11 @@
 name = "diablo2-info-worker"
-main = "src/main.py"
+main = "typescript/src/index.ts"
 compatibility_date = "2026-03-04"
 
-compatibility_flags = [ "python_workers" ]
+compatibility_flags = ["nodejs_compat"]
 
 [triggers]
 crons = ["1,31 * * * *"]
+
+[observability]
+enabled = true
