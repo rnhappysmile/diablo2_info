@@ -1,5 +1,6 @@
 # tests/test_d2r.py
 from src.main import diablo_clone_status
+from src.main import terror_zone_status
 
 def test_state_plus_one_logic():
     """state 값이 0이 아닐 때 +1 되어서 출력되는지 확인"""
@@ -65,3 +66,45 @@ def test_state_boundary_logic():
     result = diablo_clone_status(boundary_data)
     
     assert "(상태: 6)" in result
+
+def test_terror_zone_status():
+    # 복사해오신 데이터를 raw_json이나 리스트로 넣습니다.
+    tz_data = [
+        {
+            "time": 1772602200, 
+            "zone_name": ["Outer_Steppes", "Plains_of_Despair"], 
+            "immunities": ["f", "c", "l", "p", "ph", "m"],
+            "tier-exp": "C", 
+            "tier-loot": "C", 
+            "area_id": 104, 
+            "area_ids": [104, 105], 
+            "end_time": 1772604000
+        },
+        {
+            "time": 1772600400, 
+            "zone_name": ["Tal_Rashas_Tomb", "Duriels_Lair", "Canyon_of_The_Magi"], 
+            "immunities": ["f", "c", "l", "p", "ph", "m"], 
+            "tier-exp": "S", 
+            "tier-loot": "A", 
+            "area_id": 46, 
+            "area_ids": [46, 66, 67, 68, 69, 70, 71, 72, 73], 
+            "end_time": 1772602200
+        }
+    ]
+    
+    result = terror_zone_status(tz_data)
+    
+    print(f"\n{result}")  # 결과 출력하여 확인
+
+    # 현재와 다음이라는 제목이 모두 있는지 확인
+    assert "[현재 테러 존]" in result
+    assert "[다음 예정 테러 존]" in result
+
+    # 현재 테러존의 등급이 C로 표시되는지 확인
+    assert "등급 : 아이템(A), 경험치(S)" in result
+    
+    # 다음 테러존 지역이 포함되었는지 확인
+    assert "지역 : 평원 외곽, 절망의 평원" in result
+    
+    # 유지 시간이 연속되는지 확인 (예: 14:30가 양쪽에 있는지)
+    assert result.count("14:30") >= 2

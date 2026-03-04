@@ -1,8 +1,10 @@
 import requests
 import os
+import json
 from io import BytesIO
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime
 
 # 1. 현재 파일의 위치를 기준으로 ../configs/.env 경로 계산
 current_dir = Path(__file__).resolve().parent
@@ -19,6 +21,40 @@ WEBHOOK_URLS = [url.strip() for url in webhook_raw.split(",") if url.strip()]
 
 # 유효한 URL만 필터링
 WEBHOOK_URLS = [url for url in WEBHOOK_URLS if url]
+
+def load_area_mapping():
+    """area.json 파일을 읽어서 영어:한글 매핑 딕셔너리를 반환"""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, "..", "data", "area.json")
+        abs_path = os.path.normpath(file_path)
+        with open(abs_path, "r", encoding="utf-8") as f:
+            area_data = json.load(f)
+        
+        # area.json 구조가 [{"en": "Outer Steppes", "ko": "외부 평원"}, ...] 형태일 경우
+        # 혹은 {"Outer_Steppes": "외부 평원"} 형태일 경우에 맞춰 매핑 생성
+        # d2tz 데이터 특성상 영어 이름을 키로, ko 값을 밸류로 만듭니다.
+        mapping = {}
+        if isinstance(area_data, list):
+            for item in area_data:
+                if isinstance(item, dict):
+                    en = item.get("en")
+                    ko = item.get("ko")
+                    if en and ko:
+                        mapping[en] = ko
+                        mapping[en.replace(" ", "_")] = ko
+        elif isinstance(area_data, dict):
+            # 만약 {"English Name": "한글 이름"} 형태라면
+            for en, ko in area_data.items():
+                mapping[en] = ko
+                mapping[en.replace(" ", "_")] = ko
+        return mapping
+    except FileNotFoundError:
+        print("경고: area.json 파일을 찾을 수 없습니다. 영어 이름이 그대로 표시됩니다.")
+        return {}
+
+# 전역 변수로 매핑 데이터를 한 번 로드해둡니다.
+AREA_MAP = load_area_mapping()
 
 # 30분 마다 우버디아 체크하는게 의미가 있을까? 혹시 모름을 위해 1이 아닌 경우만 안내할까 
 def diablo_clone_status(data):
@@ -45,6 +81,49 @@ def diablo_clone_status(data):
         msg_lines.append(f"[{region}] {dlc} {ladder} {mode} (상태: {display_state})")
 
     return "\n".join(msg_lines)
+
+def terror_zone_status(terror_zone_data):
+    if not terror_zone_data or len(terror_zone_data) < 2:
+        return "테러존 정보가 부족합니다."
+
+    # 면역 약어를 한글로 바꾸는 공통 매핑 테이블
+    imm_map = {'f': '화염', 'c': '냉기', 'l': '번개', 'p': '독', 'ph': '물리', 'm': '마법'}
+
+    def format_entry(item, title):
+        # 지역명 한글 변환 로직
+        translated_zones = []
+        for zone in item['zone_name']:
+            # area.json에 매핑된 한글 이름이 있으면 쓰고, 없으면 언더바만 제거해서 표시
+            ko_zone = AREA_MAP.get(zone, zone.replace("_", " "))
+            translated_zones.append(ko_zone.get('ko', zone.replace("_", " ")))
+        
+        zones_text = ", ".join(translated_zones)
+        
+        # 시간 변환
+        start_dt = datetime.fromtimestamp(item['time'])
+        end_dt = datetime.fromtimestamp(item['end_time'])
+        time_str = f"{start_dt.strftime('%H:%M')} ~ {end_dt.strftime('%H:%M')}"
+        
+        # 면역 가공
+        translated_imm = [imm_map.get(i, i) for i in item.get('immunities', [])]
+        imm_text = ", ".join(translated_imm) if translated_imm else "없음"
+        
+        # 한 덩어리의 메시지 생성
+        return (
+            f"[{title}]\n"
+            f"지역 : {zones_text}\n"
+            f"시간 : {time_str}\n"
+            f"등급 : 아이템({item.get('tier-loot', 'N/A')}), 경험치({item.get('tier-exp', 'N/A')})\n"
+            f"면역 : {imm_text}"
+        )
+
+    # 현재(data[0])와 다음(data[1]) 데이터를 각각 포맷팅
+    current_msg = format_entry(terror_zone_data[1], "현재 테러 존")
+    next_msg = format_entry(terror_zone_data[0], "다음 예정 테러 존")
+
+    return f"{current_msg}\n\n{next_msg}"
+
+    assert "대박" in result
 
 def send_webhook():
     if not WEBHOOK_URLS:
