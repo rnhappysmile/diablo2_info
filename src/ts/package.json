@@ -11,6 +11,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^25.3.3",
+		"@vitest/ui": "^4.0.18",
 		"typescript": "^5.5.2",
 		"vitest": "^4.0.18",
 		"wrangler": "^4.70.0"
