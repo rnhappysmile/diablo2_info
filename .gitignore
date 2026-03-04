@@ -20,6 +20,7 @@ __pycache__/
 # 3. 환경 변수 및 설정 (비밀번호, API 키 등)
 .env
 config.py
+.dev.vars
 
 # 4. 운영체제 관련 파일
 .DS_Store
