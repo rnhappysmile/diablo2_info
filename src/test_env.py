@@ -20,28 +20,17 @@ WEBHOOK_URLS = [url.strip() for url in webhook_raw.split(",") if url.strip()]
 # 유효한 URL만 필터링
 WEBHOOK_URLS = [url for url in WEBHOOK_URLS if url]
 
-def send_webhook():
+def test_split_webhook_urls():
     if not WEBHOOK_URLS:
         print("설정된 웹훅 URL이 없습니다.")
         return
-
-    IMAGE_URL = "https://api.d2tz.info/public/tz_image?l=ko"
     
     try:
-        response = requests.get(IMAGE_URL)
-        response.raise_for_status()
-        image_data = response.content
-
         for url in WEBHOOK_URLS:
-            image_file = BytesIO(image_data)
-            files = {'file': ('tz_image.png', image_file, 'image/png')}
-            payload = {'content': "Data courtesy of [d2tz.info](<https://www.d2tz.info/>)"}
-            
-            res = requests.post(url, data=payload, files=files)
-            print(f"전송 결과({url}): {res.status_code}")
+            print(f"전송 결과({url})")
 
     except Exception as e:
         print(f"에러 발생: {e}")
 
 if __name__ == "__main__":
-    send_webhook()
+    test_split_webhook_urls()
