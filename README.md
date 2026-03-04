@@ -15,8 +15,7 @@ A Python bot that fetches data and sends it to Discord channels.
         pip install -r requirements.txt
 3. Configure environment variables.
     - Create a `.env` file in the root directory and add your Discord Webhook URLs:
-        WEBHOOK_URL_1=your_discord_webhook_url_here
-        WEBHOOK_URL_2=your_second_webhook_url_here
+        DISCORD_WEBHOOKS=your_discord_webhook_url_here
 4. run mian.py
 
 ## Data courtesy
