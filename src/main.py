@@ -78,7 +78,7 @@ def diablo_clone_status(data):
         
         mode = "하드코어" if item['hardcore'] else "스탠다드"
         ladder = "래더" if item['ladder'] else "비래더"
-        dlc = "확장팩" if item['dlc'] == "LoD" else "오리지널"
+        dlc = "확장팩" if item['dlc'] == "LoD" else "악마술사의 군림"
         
         #msg_lines.append(f"{emoji} [{region}] {dlc} {ladder} {mode} (상태: {display_state})")
         msg_lines.append(f"[{region}] {dlc} {ladder} {mode} (상태: {display_state})")
@@ -164,7 +164,7 @@ def send_webhook(message):
         return
     
     payload = {'content': f"{message}\n\nData courtesy of [d2tz.info](<https://www.d2tz.info/>)"}
-    
+
     try:
         for url in WEBHOOK_URLS:            
             res = requests.post(url, data=payload)
